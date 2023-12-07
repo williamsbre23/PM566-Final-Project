@@ -1,0 +1,83 @@
+---
+title: "Final"
+author: "Breyonne Williams"
+format: html
+editor: visual
+---
+
+## Introduction
+
+With the housing market in a bit of limbo right now, it makes it difficult for first time home buyers to purchase a home. With this project I want to explore the most common hosuing listings available in the Southern California area, more specifically Los Angeles County. Without a certain income or money for a down payment, buying a home is almost impossible. Most of the time these homes are older and need a lot of work. Throughout this project I will explore the question of how many homes in Los Angeles County are available for first time home buyers? I will also explore for garage count and square footage included in the search.
+
+## Methods
+
+The dataset used was acquired from Kaggle under a Zillow competition for home value prediction. After creating an account and entering the competition, I was able to download the dataset. The dataset was cleaned by sub setting the data for latitude, longitude, and number of bedrooms. Next, I subsetted for homes than were built after the year 2000. Lastly, I cleaned for number of garages, square footage, and region city ID.
+
+```{r, echo=FALSE, message=FALSE}
+library(readr)
+
+properties_2016 <- read_csv("~/Downloads/properties_2016.csv")
+library(data.table)
+
+properties_2016 <- subset(properties_2016, latitude <= 34879216)
+properties_2016 <- subset(properties_2016, longitude >= -118879216)
+properties_2016 <- subset(properties_2016, bedroomcnt >= 1)
+properties_2016 <- subset(properties_2016, bedroomcnt <= 3)
+properties_2016 <- subset(properties_2016, yearbuilt >= 2000)
+
+features_of_interest <- properties_2016[, c("parcelid", "bedroomcnt","bathroomcnt", "garagecarcnt","finishedsquarefeet12","finishedsquarefeet50","yearbuilt","regionidcity", "latitude", "longitude")]
+features_of_interest <- na.omit(features_of_interest)
+```
+
+## Preliminary Results
+
+```{r, echo=FALSE, message=FALSE}
+library(DT)
+library(plotly)
+
+features_of_interest_SH <- features_of_interest %>% select(parcelid, bedroomcnt, bathroomcnt, garagecarcnt, finishedsquarefeet12, finishedsquarefeet50, yearbuilt)
+datatable(features_of_interest_SH)
+```
+
+## Visualization
+
+```{r, echo=FALSE, message=FALSE}
+
+features_of_interest$latitude <- features_of_interest$latitude/1000000
+features_of_interest$longitude <- features_of_interest$longitude/1000000
+
+library(plotly)
+library(ggplot2)
+library(magrittr)
+
+g <- list(
+  visible = F,
+  resolution = 110,
+  scope = "usa",
+  showcountries = T,
+  countrycolor = toRGB("Black"),
+  showsubunits = T,
+  subunitcolor = toRGB("Blue"),
+  showland = TRUE,
+  landcolor = toRGB("#e5ecf6")
+)
+
+features_of_interest$hover <- with(features_of_interest, paste(parcelid, '<br>'))
+fig <- features_of_interest %>%
+  plot_geo(x = ~longitude, 
+           y = ~latitude,
+           text = ~parcelid,
+           hovertemplate = ~hover) %>%
+  add_scattergeo() %>%
+  layout(geo = g)
+
+fig <- fig %>% layout(
+  title = paste('Homes by ID', Sys.Date(), '<br>(Hover for Parcel ID)')
+)
+
+fig
+```
+
+## Conclusion
+
+After cleaning the data the number of homes built in 2000 and beyond decreased from a little over 1 million listings to 850. These homes were subset to match the coordinates of Los Angeles county. I also narrowed the bedrooms to 3 or less. Due to limited information given from the original website it was difficult to know exactly which cities these homes were in according to the regioncityid, but I felt it would be useful to know if they were enough homes possibly grouped together within a certain area. It was interesting to see the drastic change in the number of homes available once I decided on narrowing the range for year built. Although homes built in 2000 are still 23 years old, most of the homes listed were built in the mid to late 1900's. This project helped answer the question of how many homes are available within Los Angeles county for potential home owners, however the next step would be investigating the prices of these homes and whether or not they are affordable for first time home owners.
